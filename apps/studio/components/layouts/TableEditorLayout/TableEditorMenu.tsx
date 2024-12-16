@@ -1,9 +1,6 @@
 import { PermissionAction } from '@supabase/shared-types/out/constants'
-import { partition } from 'lodash'
-import { Filter, Plus } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-
 import { useParams } from 'common'
+import { SkeletonMenuList } from 'components/editor-menu-list-skeleton'
 import { ProtectedSchemaModal } from 'components/interfaces/Database/ProtectedSchemaWarning'
 import AlertError from 'components/ui/AlertError'
 import { ButtonTooltip } from 'components/ui/ButtonTooltip'
@@ -17,6 +14,9 @@ import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
 import { useLocalStorage } from 'hooks/misc/useLocalStorage'
 import { useQuerySchemaState } from 'hooks/misc/useSchemaQueryState'
 import { PROTECTED_SCHEMAS } from 'lib/constants/schemas'
+import { partition } from 'lodash'
+import { Filter, Plus } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTableEditorStateSnapshot } from 'state/table-editor'
 import {
   AlertDescription_Shadcn_,
@@ -35,10 +35,10 @@ import {
   InnerSideBarFilterSortDropdown,
   InnerSideBarFilterSortDropdownItem,
   InnerSideBarFilters,
-  InnerSideBarShimmeringLoaders,
 } from 'ui-patterns/InnerSideMenu'
 import { useProjectContext } from '../ProjectLayout/ProjectContext'
 import EntityListItem from './EntityListItem'
+import { TableMenuEmptyState } from './TableMenuEmptyState'
 
 const TableEditorMenu = () => {
   const { id: _id } = useParams()
@@ -111,10 +111,7 @@ const TableEditorMenu = () => {
 
   return (
     <>
-      <div
-        className="pt-5 flex flex-col flex-grow gap-5 h-full"
-        style={{ maxHeight: 'calc(100vh - 48px)' }}
-      >
+      <div className="flex flex-col flex-grow gap-5 pt-5 h-full">
         <div className="flex flex-col gap-y-1.5">
           <SchemaSelector
             className="mx-4"
@@ -166,8 +163,8 @@ const TableEditorMenu = () => {
             )}
           </div>
         </div>
-        <div className="flex flex-auto flex-col gap-2 pb-4 px-2">
-          <InnerSideBarFilters>
+        <div className="flex flex-auto flex-col gap-2 pb-4">
+          <InnerSideBarFilters className="mx-2">
             <InnerSideBarFilterSearchInput
               autoFocus
               name="search-tables"
@@ -244,20 +241,18 @@ const TableEditorMenu = () => {
             </Popover_Shadcn_>
           </InnerSideBarFilters>
 
-          {isLoading && <InnerSideBarShimmeringLoaders />}
+          {isLoading && <SkeletonMenuList />}
 
           {isError && (
-            <AlertError error={(error ?? null) as any} subject="Failed to retrieve tables" />
+            <div className="mx-4">
+              <AlertError error={(error ?? null) as any} subject="Failed to retrieve tables" />
+            </div>
           )}
 
           {isSuccess && (
             <>
               {searchText.length === 0 && (entityTypes?.length ?? 0) <= 0 && (
-                <InnerSideBarEmptyPanel
-                  className="mx-2"
-                  title="No entities available"
-                  description="This schema has no entities available yet"
-                />
+                <TableMenuEmptyState />
               )}
               {searchText.length > 0 && (entityTypes?.length ?? 0) <= 0 && (
                 <InnerSideBarEmptyPanel
@@ -267,9 +262,10 @@ const TableEditorMenu = () => {
                 />
               )}
               {(entityTypes?.length ?? 0) > 0 && (
-                <div className="flex flex-1" data-testid="tables-list">
+                <div className="flex flex-1 flex-grow" data-testid="tables-list">
                   <InfiniteList
                     items={entityTypes}
+                    // @ts-expect-error
                     ItemComponent={EntityListItem}
                     itemProps={{
                       projectRef: project?.ref!,
